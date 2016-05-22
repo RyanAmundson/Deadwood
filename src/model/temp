@@ -1,0 +1,221 @@
+		try {
+			this.success = new JLabel(new ImageIcon(ImageIO.read(new File("resources/success-arrow1.png"))));
+			this.success.setBounds(500,350,200, 200);
+			this.success.setVisible(false);
+			add(this.success);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		try {
+			this.failure = new JLabel(new ImageIcon(ImageIO.read(new File("resources/redX.png"))));
+			this.failure.setBounds(500,350,200, 200);
+			this.failure.setVisible(false);
+			add(this.failure);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+package model;
+
+import java.io.*;
+import java.lang.Object;
+import javax.xml.parsers.*;
+import org.w3c.dom.*;
+
+import view.BoardView;
+
+import java.util.*;
+
+
+public class Room implements DayListener{
+
+  private String name;
+  private int neighborCount;
+  private int mapIndex;
+  private List<Room> neighbors;
+  private LinkedList<Player> currentPlayers = new LinkedList<Player>();
+
+
+
+//==========================Constructors========================================
+  protected Room(String name, int nbCount){
+    this.name = name;
+    this.neighborCount = nbCount;
+  }
+
+  protected Room(int nbCount){
+    this.neighborCount = nbCount;
+  }
+
+//==========================Methods=============================================
+
+
+/*
+ static build() takes in the xml for a single room and uses it to build rooms
+ and the roles in each room.
+
+ it also adds the name of each room to the static room map held in board
+
+ why does parsing make this code so ugly??
+
+*/
+  public static Room build(Element room){
+
+    String[] nL = new String[]{"","","",""};
+    LinkedList<Role> rL = new LinkedList<Role>();
+    int nbCount = room.getElementsByTagName("neighbor").getLength();
+    String roomName = new String();
+    if(room.hasAttributes()){
+      roomName = room.getAttributes().getNamedItem("name").getTextContent();
+    }else{
+      roomName = room.getTagName();
+    }
+    switch(room.getTagName()){
+
+      case "set":
+        for(int i=0;i < nbCount;i++){
+          String n = room.getElementsByTagName("neighbor").item(i).getAttributes().getNamedItem("name").getTextContent();
+          nL[i] = n;
+        }
+        Board.addRoomToMap(roomName,nL[0],nL[1],nL[2],nL[3]);
+        for(int i=0;i < room.getElementsByTagName("part").getLength();i++){
+          Role r = new Role("extra",room.getElementsByTagName("part").item(i).getAttributes().getNamedItem("name").getTextContent(),Integer.parseInt(room.getElementsByTagName("part").item(i).getAttributes().getNamedItem("level").getTextContent()));
+          rL.add(r);
+        }
+        int shotCounter = room.getElementsByTagName("take").getLength();
+        return new Set(roomName,rL,shotCounter, nbCount);
+
+
+      case "trailer":
+        for(int i=0;i < nbCount;i++){
+          String n = room.getElementsByTagName("neighbor").item(i).getAttributes().getNamedItem("name").getTextContent();
+          nL[i] = n;
+
+        }
+        Board.addRoomToMap(roomName,nL[0],nL[1],nL[2],nL[3]);
+        return new Trailer("trailer",nbCount);
+
+      case "office":
+        for(int i=0;i < nbCount;i++){
+          String n = room.getElementsByTagName("neighbor").item(i).getAttributes().getNamedItem("name").getTextContent();
+          nL[i] = n;
+
+        }
+        Board.addRoomToMap(roomName,nL[0],nL[1],nL[2],nL[3]);
+        return new CastingOffice("office",nbCount);
+
+    }
+    return null;
+  }
+
+  public LinkedList<Player> getPlayers(){
+    return currentPlayers;
+  }
+  public void addPlayer(Player p){
+    BoardView.getInstance().enteredRoom(name, p.getColor());
+    currentPlayers.add(p);
+  }
+  public void removePlayer(Player p){
+	BoardView.getInstance().leftRoom(name, p.getColor());
+    currentPlayers.remove(p);
+  }
+  public void removeCard(){
+  }
+
+  public String getName(){
+    return name;
+  }
+  public List<Room> getNeighbors(){
+    return neighbors;
+  }
+  public int getNeighborCount(){
+    return neighborCount;
+  }
+  public void addNeighbor(Room r){
+    this.neighbors.add(r);
+  }
+  public int getMapIndex(){
+    return mapIndex;
+  }
+  public void setMapIndex(int i){
+    this.mapIndex = i;
+  }
+  /*
+  hasNeighbor() returns true if the name provided is a neighbor of the room it
+  was called on
+  */
+  public boolean hasNeighbor(String neighbor){
+    for(String name : Board.getRoomMap()[mapIndex]){
+      if(name.toLowerCase().equals(neighbor.toLowerCase())){
+        return true;
+      }
+    }
+    return false;
+  }
+
+ 
+
+
+
+
+
+//these are all the methods overridden in the derived class. maybe I should just
+//make this class abstract?
+  public int getBudget(){  return 0;}
+  public boolean hasSceneCard(){return true; }
+  public boolean drawCardAllowed(){return false;}
+  public void showRoles(){}
+  public void drawCard(){}
+  public LinkedList<Role> getRoles(){return null;}
+  public SceneCard getCurrentCard(){  return null;}
+  public void shotSuccess(){}
+  public int shotsRemaining(){return 0;}
+  public void setBudget(int budget){}
+
+
+
+}
+
